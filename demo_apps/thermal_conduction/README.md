@@ -53,9 +53,12 @@ Relevant settings live in `config.json`: `problem.geometry`,
 `problem.cameraView`, `problem.cameraWidth`, `problem.cameraHeight`, walk
 settings under `solver`, and image/colormap settings under `output`.
 
-Rendering a view is more expensive than the lightweight setup visualization. As
-a reference, views 0-2 take roughly 2-3 minutes per view on a Blackwell RTX PRO
-6000-class GPU with the current settings.
+**NOTE**: Computing temperatures for a given view is computationally expensive
+compared to the lightweight setup visualization. For context, rendering views 0–2
+takes approximately 2–3 minutes per view on a Blackwell RTX PRO 6000-class GPU
+using default settings; other views will require additional time. This demo
+currently struggles with extremely long walk lengths, which remains an open
+research challenge.
 
 ## Demo Modes
 
