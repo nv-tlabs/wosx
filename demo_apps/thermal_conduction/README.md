@@ -72,7 +72,8 @@ enabled.
 
 ## Running the C++ Demo
 
-Run the executable from the build directory as follows:
+First, unzip `data/rover.zip`. Then run the executable from the build directory
+as follows:
 
 ```bash
 cd build
