@@ -283,7 +283,7 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
                 if (!geometricQueries.isReflectingBoundaryEmpty() &&
                     walkSettings.epsilonShellForReflectingBoundary <= distToAbsorbingBoundary)
                 {
-                    starRadius = max(WOSX_RADIUS_SHRINK_PERCENTAGE * starRadius,
+                    starRadius = max(RADIUS_SHRINK_PERCENTAGE * starRadius,
                                      walkSettings.epsilonShellForReflectingBoundary);
                 }
             }
@@ -490,7 +490,7 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
                 greensFn.updateAbsorptionCoeff(pde.absorptionCoeff());
                 float boundaryDist = min(samplePt.distToAbsorbingBoundary,
                                          samplePt.distToReflectingBoundary);
-                greensFn.updateBall(state.currentPt, WOSX_RADIUS_SHRINK_PERCENTAGE * boundaryDist);
+                greensFn.updateBall(state.currentPt, RADIUS_SHRINK_PERCENTAGE * boundaryDist);
 
                 // compute the source contribution inside the ball
                 T firstSourceContribution = T(0.0);

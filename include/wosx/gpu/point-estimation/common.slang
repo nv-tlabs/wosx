@@ -27,7 +27,7 @@ implementing wosx;
 __include core.pde;
 __include core.geometric_queries;
 
-internal static const float WOSX_RADIUS_SHRINK_PERCENTAGE = 0.99;
+internal static const float RADIUS_SHRINK_PERCENTAGE = 0.99;
 
 public struct WalkSettings
 {

@@ -26,9 +26,9 @@
 
 implementing wosx;
 
-#define PCG32_DEFAULT_STATE 0x853c49e6748fea9bULL
-#define PCG32_DEFAULT_STREAM 0xda3e39cb94b95bdbULL
-#define PCG32_MULT 0x5851f42d4c957f2dULL
+#define WOSX_PCG32_DEFAULT_STATE 0x853c49e6748fea9bULL
+#define WOSX_PCG32_DEFAULT_STREAM 0xda3e39cb94b95bdbULL
+#define WOSX_PCG32_MULT 0x5851f42d4c957f2dULL
 
 /// PCG32 Pseudorandom number generator
 public struct pcg32
@@ -39,8 +39,8 @@ public struct pcg32
     /// Initialize the pseudorandom number generator with default seed
     public __init()
     {
-        state = PCG32_DEFAULT_STATE;
-        inc = PCG32_DEFAULT_STREAM;
+        state = WOSX_PCG32_DEFAULT_STATE;
+        inc = WOSX_PCG32_DEFAULT_STREAM;
     }
 
     /**
@@ -64,7 +64,7 @@ public struct pcg32
     public uint nextUInt()
     {
         uint64_t oldstate = state;
-        state = oldstate * PCG32_MULT + inc;
+        state = oldstate * WOSX_PCG32_MULT + inc;
         uint xorshifted = (uint)(((oldstate >> 18u) ^ oldstate) >> 27u);
         uint rot = (uint)(oldstate >> 59u);
         return (xorshifted >> rot) | (xorshifted << ((~rot + 1u) & 31));
