@@ -187,15 +187,17 @@ mReflectingBoundaryValue(nullptr),
 mAbsorbingBoundaryNormalAlignedValue(nullptr),
 mReflectingBoundaryNormalAlignedValue(nullptr)
 {
-    Vector2i sourceValueGridShape = Vector2i(sourceValue_.h, sourceValue_.w);
+    Vector2i sourceValueGridShape = Vector2i(sourceValue_.w, sourceValue_.h);
     mSourceValue = std::make_unique<wosx::GPUDenseGrid<float, CHANNELS, 2>>(
         mSampler, getTextureData(sourceValue_),
         sourceValueGridShape, gridMin_, gridMax_, false);
-    Vector2i absorbingBoundaryValueGridShape = Vector2i(absorbingBoundaryValue_.h, absorbingBoundaryValue_.w);
+    Vector2i absorbingBoundaryValueGridShape = Vector2i(absorbingBoundaryValue_.w,
+                                                        absorbingBoundaryValue_.h);
     mAbsorbingBoundaryValue = std::make_unique<wosx::GPUDenseGrid<float, CHANNELS, 2>>(
         mSampler, getTextureData(absorbingBoundaryValue_),
         absorbingBoundaryValueGridShape, gridMin_, gridMax_, false);
-    Vector2i reflectingBoundaryValueGridShape = Vector2i(reflectingBoundaryValue_.h, reflectingBoundaryValue_.w);
+    Vector2i reflectingBoundaryValueGridShape = Vector2i(reflectingBoundaryValue_.w,
+                                                         reflectingBoundaryValue_.h);
     mReflectingBoundaryValue = std::make_unique<wosx::GPUDenseGrid<float, CHANNELS, 2>>(
         mSampler, getTextureData(reflectingBoundaryValue_),
         reflectingBoundaryValueGridShape, gridMin_, gridMax_, false);

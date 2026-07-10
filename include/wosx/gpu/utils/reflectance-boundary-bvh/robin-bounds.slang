@@ -31,14 +31,23 @@ public struct RobinLineSegmentBound : IReflectancePrimitiveBound
     {
         float3 planeClosestPt;
         float h = findClosestPointPlane(planePt, planeNormal, s.c, planeClosestPt);
-        float cosUpperBound = abs(dot(viewDirClosest / closestPtDist, planeNormal));
-        float cosLowerBound = abs(dot(viewDirFarthest / farthestPtDist, planeNormal));
-        float cosLine = sqrt(h * maxRobinCoeff) / SQRT_2;
-        float cosLineSegment = clamp(cosLine, cosLowerBound, cosUpperBound);
-        float cosLineSegment2 = cosLineSegment * cosLineSegment;
-        float lineSegmentRadius = (h / cosLineSegment) * exp(cosLineSegment2 / (h * maxRobinCoeff));
-        float lineSegmentRadius2 = lineSegmentRadius * lineSegmentRadius;
-        s.r2 = min(s.r2, lineSegmentRadius2);
+        if (h > 0.0)
+        {
+            float cosUpperBound = abs(dot(viewDirClosest / closestPtDist, planeNormal));
+            float cosLowerBound = abs(dot(viewDirFarthest / farthestPtDist, planeNormal));
+            float cosLine = sqrt(h * maxRobinCoeff) / SQRT_2;
+            float cosLineSegment = clamp(cosLine, cosLowerBound, cosUpperBound);
+            float cosLineSegment2 = cosLineSegment * cosLineSegment;
+            float lineSegmentRadius = (h / cosLineSegment) * exp(cosLineSegment2 / (h * maxRobinCoeff));
+            float lineSegmentRadius2 = lineSegmentRadius * lineSegmentRadius;
+            s.r2 = min(s.r2, lineSegmentRadius2);
+        }
+        else
+        {
+            // the query point lies on the segment's supporting line, where the radius bound
+            // evaluates to 0/0: apply its limit as h -> 0, the distance to the segment itself
+            s.r2 = min(s.r2, closestPtDist * closestPtDist);
+        }
     }
 };
 
@@ -52,17 +61,26 @@ public struct RobinTriangleBound : IReflectancePrimitiveBound
     {
         float3 planeClosestPt;
         float h = findClosestPointPlane(planePt, planeNormal, s.c, planeClosestPt);
-        float cosUpperBound = abs(dot(viewDirClosest / closestPtDist, planeNormal));
-        float cosLowerBound = abs(dot(viewDirFarthest / farthestPtDist, planeNormal));
-        float maxCosForBound = sqrt(h * maxRobinCoeff);
-        if (maxCosForBound >= cosLowerBound)
+        if (h > 0.0)
         {
-            float cosPlane = maxCosForBound / SQRT_3;
-            float cosTriangle = clamp(cosPlane, cosLowerBound, cosUpperBound);
-            float cosTriangle2 = cosTriangle * cosTriangle;
-            float triangleRadius = h * h * maxRobinCoeff / (cosTriangle * (h * maxRobinCoeff - cosTriangle2));
-            float triangleRadius2 = triangleRadius * triangleRadius;
-            s.r2 = min(s.r2, triangleRadius2);
+            float cosUpperBound = abs(dot(viewDirClosest / closestPtDist, planeNormal));
+            float cosLowerBound = abs(dot(viewDirFarthest / farthestPtDist, planeNormal));
+            float maxCosForBound = sqrt(h * maxRobinCoeff);
+            if (maxCosForBound >= cosLowerBound)
+            {
+                float cosPlane = maxCosForBound / SQRT_3;
+                float cosTriangle = clamp(cosPlane, cosLowerBound, cosUpperBound);
+                float cosTriangle2 = cosTriangle * cosTriangle;
+                float triangleRadius = h * h * maxRobinCoeff / (cosTriangle * (h * maxRobinCoeff - cosTriangle2));
+                float triangleRadius2 = triangleRadius * triangleRadius;
+                s.r2 = min(s.r2, triangleRadius2);
+            }
+        }
+        else
+        {
+            // the query point lies in the triangle's supporting plane, where the radius bound
+            // evaluates to 0/0: apply its limit as h -> 0, the distance to the triangle itself
+            s.r2 = min(s.r2, closestPtDist * closestPtDist);
         }
     }
 };

@@ -853,6 +853,7 @@ public struct HarmonicGreensFnBall3D : IGreensFnBall<3>
         float u3 = rng.nextFloat();
         float uMedian = max(min(u1, u2), min(max(u1, u2), u3));
         r = R * uMedian;
+        r = max(rClamp, r);
         if (r > R)
         {
             r = R / 2.0;

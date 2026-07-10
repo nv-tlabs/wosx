@@ -62,13 +62,36 @@ public struct UniformDomainSampler<SolveRegion, GeometricQueries, let DIM : int>
     private SolveRegion solveRegion;
     private GeometricQueries geometricQueries;
 
+    // bounds on the rejection sampling iteration budget: the lower bound
+    // covers high-occupancy solve regions, while the upper bound prevents
+    // spinning indefinitely on degenerate solve regions (e.g. zero volume)
+    static const int minRejectionIterations = 64;
+    static const int maxRejectionIterations = 65536;
+
     // generates a uniformly distributed sample point in the domain
     public void generateSample(inout pcg32 rng,
                                inout SamplePoint<DIM> samplePt)
     {
+        // rejection sample a point inside the solve region; samples that fail to
+        // land inside the region within the iteration budget are marked as skipped,
+        // and should contribute zero to downstream estimates
         vector<float, DIM> regionExtent = solveRegion.getRegionMax() - solveRegion.getRegionMin();
+        float boxVolume = 1.0;
+        for (int i = 0; i < DIM; i++)
+        {
+            boxVolume *= regionExtent[i];
+        }
 
-        while (true)
+        // each iteration accepts a candidate with probability regionVolume / boxVolume,
+        // so a budget set to a generous multiple of the expected number of iterations
+        // makes skips vanishingly rare for valid solve regions of any occupancy
+        float expectedIterations = boxVolume / solveRegion.getRegionVolume();
+        int nIterations = int(clamp(32.0 * expectedIterations,
+                                    float(minRejectionIterations),
+                                    float(maxRejectionIterations)));
+        bool foundSample = false;
+
+        for (int iter = 0; iter < nIterations; iter++)
         {
             vector<float, DIM> randNums;
             for (int i = 0; i < DIM; i++)
@@ -77,15 +100,17 @@ public struct UniformDomainSampler<SolveRegion, GeometricQueries, let DIM : int>
             }
 
             vector<float, DIM> pt = solveRegion.getRegionMin() + regionExtent * randNums;
+            samplePt.pt = pt;
             if (solveRegion.isInside(pt))
             {
-                samplePt.pt = pt;
+                foundSample = true;
                 break;
             }
         }
 
         samplePt.type = SampleType::InDomain;
-        samplePt.estimationQuantity = EstimationQuantity::Solution;
+        samplePt.estimationQuantity = foundSample ? EstimationQuantity::Solution :
+                                                    EstimationQuantity::Skip;
         samplePt.pdf = 1.0 / solveRegion.getRegionVolume();
         samplePt.distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(samplePt.pt, false);
         samplePt.distToReflectingBoundary = geometricQueries.computeDistToReflectingBoundary(samplePt.pt, false);

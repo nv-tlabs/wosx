@@ -25,6 +25,7 @@ as PNG images.
 
 import argparse
 import json
+import sys
 import math
 import os
 import numpy as np
@@ -574,7 +575,7 @@ def visualize_problem(output_config, mesh_data, slice_plane_data,
 def run_demo():
     # parse arguments
     parser = argparse.ArgumentParser(description="electrostatics demo")
-    parser.add_argument("--config", type=str, help="path to the configuration file")
+    parser.add_argument("--config", type=str, required=True, help="path to the configuration file")
     args = parser.parse_args()
 
     try:
@@ -665,13 +666,13 @@ def run_demo():
                 comb_state.increment_frame_index()
 
     except FileNotFoundError:
-        print("Configuration file not found")
+        sys.exit("Configuration file not found")
 
     except json.JSONDecodeError:
-        print("Invalid configuration file")
+        sys.exit("Invalid configuration file")
 
     except ValueError as error:
-        print(error)
+        sys.exit(str(error))
 
 if __name__ == "__main__":
     run_demo()

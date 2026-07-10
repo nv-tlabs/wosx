@@ -17,9 +17,14 @@
 
 #pragma once
 
-#include <fcpw/gpu/slang_rhi_utils.h>
+#include <wosx/utils/sdf_grid_geometric_queries.h>
+#include <fcpw/fcpw_gpu.h>
 
 namespace wosx {
+
+using fcpw::float2;
+using fcpw::float3;
+using namespace fcpw;
 
 template <typename T, size_t CHANNELS, size_t DIM>
 class GPUDenseGrid: public GPUShaderObject {
@@ -113,9 +118,12 @@ unorderedAccess(unorderedAccess_)
 template <typename T, size_t CHANNELS, size_t DIM>
 void GPUDenseGrid<T, CHANNELS, DIM>::allocate(GPUContext& context)
 {
-    size_t width = grid.shape[0];
-    size_t height = grid.shape[1];
-    size_t depth = DIM == 3 ? grid.shape[2] : 1;
+    // the texture width (u) axis maps to the fastest-varying (last) grid dimension:
+    // the grid data is uploaded linearly in its row-major CPU layout, and the shaders
+    // sample the texture with correspondingly reversed (.yx/.zyx) coordinate swizzles
+    size_t width = grid.shape[DIM - 1];
+    size_t height = grid.shape[DIM - 2];
+    size_t depth = DIM == 3 ? grid.shape[0] : 1;
     size_t size = width*height*depth;
     if constexpr (CHANNELS == 1) {
         texture.template allocate<T, CHANNELS>(context.device, sampler->sampler,
@@ -195,9 +203,12 @@ unorderedAccess(unorderedAccess_)
 template <size_t DIM>
 void GPUSdfGrid<DIM>::allocate(GPUContext& context)
 {
-    size_t width = grid.shape[0];
-    size_t height = grid.shape[1];
-    size_t depth = DIM == 3 ? grid.shape[2] : 1;
+    // the texture width (u) axis maps to the fastest-varying (last) grid dimension:
+    // the grid data is uploaded linearly in its row-major CPU layout, and the shaders
+    // sample the texture with correspondingly reversed (.yx/.zyx) coordinate swizzles
+    size_t width = grid.shape[DIM - 1];
+    size_t height = grid.shape[DIM - 2];
+    size_t depth = DIM == 3 ? grid.shape[0] : 1;
     size_t size = width*height*depth;
     sampler.allocate(context, TextureFilteringMode::Linear, TextureAddressingMode::ClampToEdge);
     texture.template allocate<float, 1>(context.device, sampler.sampler,

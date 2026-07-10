@@ -28,6 +28,7 @@ uniform ParameterBlock<PointEstimatorType> gPointEstimator;
 typedef BoundaryValueCaching<DataType, PDEType, WOSX_PROBLEM_DIMENSION> BoundaryValueCachingType;
 uniform ParameterBlock<BoundaryValueCachingType> gBoundaryValueCaching;
 
+uniform ParameterBlock<WalkSettings> gWalkSettings;
 uniform ParameterBlock<PDEType> gPDE;
 
 #include "common-shaders/point-estimation.cs.slang"
@@ -61,7 +62,7 @@ void getBoundaryData(uint3 threadId: SV_DispatchThreadID,
     vector<float, WOSX_PROBLEM_DIMENSION> directionForDerivative = samplePt.normal;
     if (samplePt.estimateBoundaryNormalAligned != 0)
     {
-        directionForDerivative *= -1.0;
+        directionForDerivative = directionForDerivative * -1.0;
     }
 
     DataType solutionEstimate = localStatistics.getEstimatedSolution();
@@ -152,7 +153,8 @@ void getEvaluationOutputs(uint3 threadId: SV_DispatchThreadID,
 
     if (evaluationPoints[index].type == SampleType::OnAbsorbingBoundary)
     {
-        evaluationOutputs[index].solution = gPDE.dirichlet(evaluationPoints[index].pt);
+        evaluationOutputs[index].solution = gWalkSettings.ignoreAbsorbingBoundaryContribution == 0 ?
+                                            gPDE.dirichlet(evaluationPoints[index].pt) : DataType(0.0);
     }
     else
     {

@@ -145,7 +145,7 @@ void bindGPUStructuredBuffer(nb::module_ m, const std::string& name)
             "cursor"_a);
 }
 
-void bindGPUNonTemplatedLibraryResources(nb::module_ m)
+inline void bindGPUNonTemplatedLibraryResources(nb::module_ m)
 {
     nb::bind_vector<StringPairList>(m, "StringPairList");
 
@@ -546,7 +546,10 @@ void bindGPUTaskHandle(nb::module_ m, std::string typeStr)
             "pde"_a)
         .def("init", &wosx::GPUTaskHandle<T, DIM>::init,
             "Initializes the handle (call after setting WoSX structures)",
-            "user_macros"_a=StringPairList{})
+            // release the GIL during device setup and shader compilation; the PyGPUPDE
+            // trampoline re-acquires the GIL (via NB_OVERRIDE) before re-entering Python
+            "user_macros"_a=StringPairList{},
+            nb::call_guard<nb::gil_scoped_release>())
         .def("get_context", &wosx::GPUTaskHandle<T, DIM>::getContext,
             "Returns the GPU context.",
             nb::rv_policy::reference_internal)
@@ -623,7 +626,8 @@ void bindGPUPointEstimatorSolvers(nb::module_ m, std::string typeStr)
             "Updates the boundary distance for populated sample points.")
         .def("solve", &wosx::GPUPointEstimator<T, DIM>::solve,
             "Runs point estimator; nDispatchCalls is a utility parameter to help\nreduce GPU divergence when random walks have varying lengths:\nsetting nDispatchCalls > 1 (and nWalks := nWalksPerSampleCopy / nDispatchCalls)\nwill run the solver in multiple dispatch calls.",
-            "n_walks"_a, "n_dispatch_calls"_a=1)
+            "n_walks"_a, "n_dispatch_calls"_a=1,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("reset_sample_statistics", &wosx::GPUPointEstimator<T, DIM>::resetSampleStatistics,
             "Resets sample statistics.")
         .def("get_sample_statistics", &wosx::GPUPointEstimator<T, DIM>::getSampleStatistics,
@@ -683,10 +687,12 @@ void bindGPUBoundaryValueCachingSolver(nb::module_ m, std::string typeStr)
         .def("compute_sample_estimates", nb::overload_cast<uint32_t, uint32_t>(
             &wosx::GPUBoundaryValueCachingSolver<T, DIM>::computeSampleEstimates),
             "Computes sample estimates on the boundary.",
-            "n_walks_for_solution_estimates"_a, "n_walks_for_gradient_estimates"_a)
+            "n_walks_for_solution_estimates"_a, "n_walks_for_gradient_estimates"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("splat", &wosx::GPUBoundaryValueCachingSolver<T, DIM>::splat,
             "Splat solution and gradient estimates into the interior.",
-            "radius_clamp"_a, "kernel_regularization"_a)
+            "radius_clamp"_a, "kernel_regularization"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("reset_evaluation_statistics", &wosx::GPUBoundaryValueCachingSolver<T, DIM>::resetEvaluationStatistics,
             "Resets evaluation statistics.")
         .def("get_evaluation_outputs", &wosx::GPUBoundaryValueCachingSolver<T, DIM>::getEvaluationOutputs,

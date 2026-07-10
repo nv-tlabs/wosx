@@ -26,6 +26,8 @@
 #pragma once
 
 #include <wosx/point_estimation/reverse_walk_on_stars.h>
+#include <wosx/variance_reduction/boundary_samplers.h>
+#include <wosx/variance_reduction/domain_samplers.h>
 #include "oneapi/tbb/spin_mutex.h"
 
 namespace wosx {

@@ -43,6 +43,20 @@ endif()
 
 # install GPU support files if enabled
 if(WOSX_ENABLE_GPU_SUPPORT)
+    # Package the slang shaders, which GPU task handles compile at runtime.
+    # The source-tree relative layout is preserved under wosx/slang so that
+    # GPULibraryPaths resolves modules from an installed package without any
+    # changes; pass wosx.slang_directory_path as the wosx_directory_path argument
+    # of GPUTaskHandle when using an installed package rather than a source checkout.
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/wosx/gpu
+        DESTINATION wosx/slang/include/wosx
+        FILES_MATCHING PATTERN "*.slang"
+    )
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/deps/fcpw/include/fcpw/gpu
+        DESTINATION wosx/slang/deps/fcpw/include/fcpw
+        FILES_MATCHING PATTERN "*.slang"
+    )
+
     # slang-rhi is static by default, but it depends on fetched Slang
     # compiler/runtime libraries and optional backend DLLs. Bundle those
     # next to _wosx so GPU bindings do not depend on build-tree paths.

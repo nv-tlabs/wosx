@@ -135,6 +135,12 @@ To build the Python bindings with GPU support:
 pip install . --config-settings=cmake.define.WOSX_ENABLE_GPU_SUPPORT=ON --force-reinstall
 ```
 
+GPU-enabled installations package the Slang shaders compiled at runtime by
+`wosx.GPUTaskHandle`: pass `wosx.slang_directory_path` as its `wosx_directory_path`
+argument when using an installed package. When running from a source checkout (as
+the demo applications do), pass the repository root instead so that shader edits
+take effect without reinstalling.
+
 The Python API can be inspected from a Python console:
 
 ```python

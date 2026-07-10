@@ -188,32 +188,38 @@ public struct ReflectanceLineSegment<PrimitiveBound> : IPrimitive, IReflectanceP
 
             if (performSilhouetteTests)
             {
-                float3 viewDir = s.c - p[0];
-                float silhouettePtDist = length(viewDir);
-                bool isSilhouette = hasAdjacentFace[0] == 0;
-                if (!isSilhouette)
+                if (hasAdjacentFace[0] >= 0)
                 {
-                    isSilhouette = isSilhouetteVertex(n0, n[0], viewDir, silhouettePtDist,
-                                                      flipNormalOrientation, silhouettePrecision);
+                    float3 viewDir = s.c - p[0];
+                    float silhouettePtDist = length(viewDir);
+                    bool isSilhouette = hasAdjacentFace[0] == 0;
+                    if (!isSilhouette)
+                    {
+                        isSilhouette = isSilhouetteVertex(n0, n[0], viewDir, silhouettePtDist,
+                                                          flipNormalOrientation, silhouettePrecision);
+                    }
+
+                    if (isSilhouette)
+                    {
+                        s.r2 = min(s.r2, silhouettePtDist * silhouettePtDist);
+                    }
                 }
 
-                if (isSilhouette)
+                if (hasAdjacentFace[1] >= 0)
                 {
-                    s.r2 = min(s.r2, silhouettePtDist * silhouettePtDist);
-                }
+                    float3 viewDir = s.c - p[1];
+                    float silhouettePtDist = length(viewDir);
+                    bool isSilhouette = hasAdjacentFace[1] == 0;
+                    if (!isSilhouette)
+                    {
+                        isSilhouette = isSilhouetteVertex(n[1], n0, viewDir, silhouettePtDist,
+                                                          flipNormalOrientation, silhouettePrecision);
+                    }
 
-                viewDir = s.c - p[1];
-                silhouettePtDist = length(viewDir);
-                isSilhouette = hasAdjacentFace[1] == 0;
-                if (!isSilhouette)
-                {
-                    isSilhouette = isSilhouetteVertex(n[1], n0, viewDir, silhouettePtDist,
-                                                      flipNormalOrientation, silhouettePrecision);
-                }
-
-                if (isSilhouette)
-                {
-                    s.r2 = min(s.r2, silhouettePtDist * silhouettePtDist);
+                    if (isSilhouette)
+                    {
+                        s.r2 = min(s.r2, silhouettePtDist * silhouettePtDist);
+                    }
                 }
             }
 

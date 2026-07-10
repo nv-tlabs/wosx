@@ -25,6 +25,7 @@ namespace wosx {
 
 using fcpw::float2;
 using fcpw::float3;
+using namespace fcpw;
 
 enum class GPUPDEType: int {
     Poisson = 1,

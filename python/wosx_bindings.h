@@ -213,7 +213,7 @@ nb::ndarray<nb::numpy, T> convertListToNumpyArray(const List& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, bool> convertListToNumpyArray(const BoolList& v)
+inline nb::ndarray<nb::numpy, bool> convertListToNumpyArray(const BoolList& v)
 {
     // allocate a memory region an initialize it
     bool *data = new bool[v.size()];
@@ -230,7 +230,7 @@ nb::ndarray<nb::numpy, bool> convertListToNumpyArray(const BoolList& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntList& v)
+inline nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntList& v)
 {
     // allocate a memory region an initialize it
     int *data = new int[v.size()];
@@ -247,7 +247,7 @@ nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntList& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, uint32_t> convertListToNumpyArray(const UintList& v)
+inline nb::ndarray<nb::numpy, uint32_t> convertListToNumpyArray(const UintList& v)
 {
     // allocate a memory region an initialize it
     uint32_t *data = new uint32_t[v.size()];
@@ -264,7 +264,7 @@ nb::ndarray<nb::numpy, uint32_t> convertListToNumpyArray(const UintList& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatList& v)
+inline nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatList& v)
 {
     // allocate a memory region an initialize it
     float *data = new float[v.size()];
@@ -281,7 +281,7 @@ nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatList& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntNList<2>& v)
+inline nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntNList<2>& v)
 {
     // allocate a memory region an initialize it
     int *data = new int[2*v.size()];
@@ -299,7 +299,7 @@ nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntNList<2>& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntNList<3>& v)
+inline nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntNList<3>& v)
 {
     // allocate a memory region an initialize it
     int *data = new int[3*v.size()];
@@ -318,7 +318,7 @@ nb::ndarray<nb::numpy, int> convertListToNumpyArray(const IntNList<3>& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatNList<2>& v)
+inline nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatNList<2>& v)
 {
     // allocate a memory region an initialize it
     float *data = new float[2*v.size()];
@@ -336,7 +336,7 @@ nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatNList<2>& v)
 }
 
 template <>
-nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatNList<3>& v)
+inline nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatNList<3>& v)
 {
     // allocate a memory region an initialize it
     float *data = new float[3*v.size()];
@@ -354,7 +354,7 @@ nb::ndarray<nb::numpy, float> convertListToNumpyArray(const FloatNList<3>& v)
     return nb::ndarray<nb::numpy, float>(data, { v.size(), 3 }, owner);
 }
 
-void bindNonTemplatedLibraryResources(nb::module_ m)
+inline void bindNonTemplatedLibraryResources(nb::module_ m)
 {
     nb::bind_vector<BoolList>(m, "BoolList");
     m.def("convert_list_to_numpy_array", &convertListToNumpyArray<BoolList, bool>);
@@ -453,19 +453,19 @@ void bindNonTemplatedLibraryResources(nb::module_ m)
                "min_radial_distance"_a=1e-2f,
                "Returns a branch traversal weight function for a reflecting boundary.");
 
-    nb::class_<ProgressBar>(utils_m, "ProgressBar")
+    nb::class_<wosx::ProgressBar>(utils_m, "ProgressBar")
         .def(nb::init<int, int>(),
             "total_work"_a, "display_width"_a=80)
-        .def("report", &ProgressBar::report,
+        .def("report", &wosx::ProgressBar::report,
             "Reports progress on the progress bar.",
             "new_work_completed"_a, "thread_id"_a)
-        .def("finish", &ProgressBar::finish,
+        .def("finish", &wosx::ProgressBar::finish,
             "Finishes the progress bar.");
 
     utils_m.def("get_report_progress_callback",
-               &getReportProgressCallback,
+               &wosx::getReportProgressCallback,
                "progress_bar"_a,
-               "Returns a callback that reports progress using a progress bar.");
+               "Returns a callback that reports progress using a progress bar.\nNOTE: the returned callback references the progress bar, which must be kept alive while the callback is in use.");
 }
 
 template <size_t DIM>
@@ -828,23 +828,23 @@ void bindGeometryUtilityFunctions(nb::module_ m, std::string typeStr)
                                  wosx::GeometricQueries<DIM>&>(
                &wosx::populateGeometricQueriesForDirichletBoundary<DIM>),
                "fcpw_dirichlet_boundary_handler"_a, "geometric_queries"_a,
-               "Populates geometric queries for an absorbing Dirichlet boundary.");
+               "Populates geometric queries for an absorbing Dirichlet boundary.\nNOTE: the populated queries reference the boundary handler, which must be kept alive for the lifetime of the geometric queries.");
 
     utils_m.def(("populate_geometric_queries_for_dirichlet_boundary" + typeStr).c_str(),
                nb::overload_cast<const wosx::SdfGrid<DIM>&, wosx::GeometricQueries<DIM>&>(
                &wosx::populateGeometricQueriesForDirichletBoundary<wosx::SdfGrid<DIM>, DIM>),
                "sdf_grid"_a, "geometric_queries"_a,
-               "Populates geometric queries for an absorbing Dirichlet boundary.");
+               "Populates geometric queries for an absorbing Dirichlet boundary.\nNOTE: the populated queries reference the sdf grid, which must be kept alive for the lifetime of the geometric queries.");
 
     utils_m.def(("populate_geometric_queries_for_neumann_boundary" + typeStr).c_str(),
                &wosx::populateGeometricQueriesForNeumannBoundary<DIM>,
                "fcpw_neumann_boundary_handler"_a, "branch_traversal_weight"_a, "geometric_queries"_a,
-               "Populates geometric queries for a reflecting Neumann boundary.");
+               "Populates geometric queries for a reflecting Neumann boundary.\nNOTE: the populated queries reference the boundary handler, which must be kept alive for the lifetime of the geometric queries.");
 
     utils_m.def(("populate_geometric_queries_for_robin_boundary" + typeStr).c_str(),
                &wosx::populateGeometricQueriesForRobinBoundary<DIM>,
                "fcpw_robin_boundary_handler"_a, "branch_traversal_weight"_a, "geometric_queries"_a,
-               "Populates geometric queries for a reflecting Robin boundary.");
+               "Populates geometric queries for a reflecting Robin boundary.\nNOTE: the populated queries reference the boundary handler, which must be kept alive for the lifetime of the geometric queries.");
 
     utils_m.def(("get_spatially_sorted_point_indices" + typeStr).c_str(),
                &wosx::getSpatiallySortedPointIndices<DIM>,
@@ -870,7 +870,7 @@ void bindPDEIndicatorCallbacks(nb::module_ m, std::string typeStr)
                nb::overload_cast<const wosx::DenseGrid<bool, 1, DIM>&>(
                &wosx::getDenseGridCallback0<bool, bool, 1, DIM>),
                "grid"_a,
-               "Returns a dense grid indicator callback.");
+               "Returns a dense grid indicator callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
     utils_m.def(("get_dense_grid_indicator_callback" + typeStr).c_str(),
                nb::overload_cast<const Eigen::Matrix<bool, Eigen::Dynamic, 1>&,
                                  const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -911,7 +911,7 @@ void bindPDECoefficientCallbacks(nb::module_ m, std::string typeStr)
                nb::overload_cast<const wosx::DenseGrid<float, 1, DIM>&>(
                &wosx::getDenseGridCallback3<float, float, 1, DIM>),
                "grid"_a,
-               "Returns a dense grid coefficient callback.");
+               "Returns a dense grid coefficient callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
     utils_m.def(("get_dense_grid_robin_coefficient_callback" + typeStr).c_str(),
                nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, 1>&,
                                  const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -926,7 +926,7 @@ void bindPDECoefficientCallbacks(nb::module_ m, std::string typeStr)
                                  const wosx::DenseGrid<float, 1, DIM>&>(
                &wosx::getDenseGridCallback4<float, float, 1, DIM>),
                "grid"_a, "grid_boundary_normal_aligned"_a,
-               "Returns a dense grid coefficient callback.");
+               "Returns a dense grid coefficient callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
     utils_m.def(("get_dense_grid_robin_coefficient_callback" + typeStr).c_str(),
                nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, 1>&,
                                  const Eigen::Matrix<float, Eigen::Dynamic, 1>&,
@@ -957,7 +957,7 @@ void bindPDESouceCallbacks(nb::module_ m, std::string typeStr)
                    nb::overload_cast<const wosx::DenseGrid<T, 1, DIM>&>(
                    &wosx::getDenseGridCallback0<T, T, 1, DIM>),
                    "grid"_a,
-                   "Returns a dense grid source callback.");
+                   "Returns a dense grid source callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_source_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
                                      const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -972,7 +972,7 @@ void bindPDESouceCallbacks(nb::module_ m, std::string typeStr)
                    nb::overload_cast<const wosx::DenseGrid<float, T::RowsAtCompileTime, DIM>&>(
                    &wosx::getDenseGridCallback0<T, float, T::RowsAtCompileTime, DIM>),
                    "grid"_a,
-                   "Returns a dense grid source callback.");
+                   "Returns a dense grid source callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_source_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
                                      const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -1011,7 +1011,7 @@ void bindPDEDirichletCallbacks(nb::module_ m, std::string typeStr)
                    nb::overload_cast<const wosx::DenseGrid<T, 1, DIM>&>(
                    &wosx::getDenseGridCallback1<T, T, 1, DIM>),
                    "grid"_a,
-                   "Returns a dense grid dirichlet boundary condition callback.");
+                   "Returns a dense grid dirichlet boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_dirichlet_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
                                      const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -1026,7 +1026,7 @@ void bindPDEDirichletCallbacks(nb::module_ m, std::string typeStr)
                                      const wosx::DenseGrid<T, 1, DIM>&>(
                    &wosx::getDenseGridCallback2<T, T, 1, DIM>),
                    "grid"_a, "grid_boundary_normal_aligned"_a,
-                   "Returns a dense grid dirichlet boundary condition callback.");
+                   "Returns a dense grid dirichlet boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_dirichlet_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
                                      const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
@@ -1042,7 +1042,7 @@ void bindPDEDirichletCallbacks(nb::module_ m, std::string typeStr)
                    nb::overload_cast<const wosx::DenseGrid<float, T::RowsAtCompileTime, DIM>&>(
                    &wosx::getDenseGridCallback1<T, float, T::RowsAtCompileTime, DIM>),
                    "grid"_a,
-                   "Returns a dense grid dirichlet boundary condition callback.");
+                   "Returns a dense grid dirichlet boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_dirichlet_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
                                      const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -1057,7 +1057,7 @@ void bindPDEDirichletCallbacks(nb::module_ m, std::string typeStr)
                                      const wosx::DenseGrid<float, T::RowsAtCompileTime, DIM>&>(
                    &wosx::getDenseGridCallback2<T, float, T::RowsAtCompileTime, DIM>),
                    "grid"_a, "grid_boundary_normal_aligned"_a,
-                   "Returns a dense grid dirichlet boundary condition callback.");
+                   "Returns a dense grid dirichlet boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_dirichlet_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
                                      const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
@@ -1099,7 +1099,7 @@ void bindPDERobinCallbacks(nb::module_ m, std::string typeStr)
                    nb::overload_cast<const wosx::DenseGrid<T, 1, DIM>&>(
                    &wosx::getDenseGridCallback3<T, T, 1, DIM>),
                    "grid"_a,
-                   "Returns a dense grid robin boundary condition callback.");
+                   "Returns a dense grid robin boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_robin_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
                                      const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -1114,7 +1114,7 @@ void bindPDERobinCallbacks(nb::module_ m, std::string typeStr)
                                      const wosx::DenseGrid<T, 1, DIM>&>(
                    &wosx::getDenseGridCallback4<T, T, 1, DIM>),
                    "grid"_a, "grid_boundary_normal_aligned"_a,
-                   "Returns a dense grid robin boundary condition callback.");
+                   "Returns a dense grid robin boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_robin_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
                                      const Eigen::Matrix<T, Eigen::Dynamic, 1>&,
@@ -1130,7 +1130,7 @@ void bindPDERobinCallbacks(nb::module_ m, std::string typeStr)
                    nb::overload_cast<const wosx::DenseGrid<float, T::RowsAtCompileTime, DIM>&>(
                    &wosx::getDenseGridCallback3<T, float, T::RowsAtCompileTime, DIM>),
                    "grid"_a,
-                   "Returns a dense grid robin boundary condition callback.");
+                   "Returns a dense grid robin boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_robin_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
                                      const wosx::Vectori<DIM>&, const wosx::Vector<DIM>&,
@@ -1145,7 +1145,7 @@ void bindPDERobinCallbacks(nb::module_ m, std::string typeStr)
                                      const wosx::DenseGrid<float, T::RowsAtCompileTime, DIM>&>(
                    &wosx::getDenseGridCallback4<T, float, T::RowsAtCompileTime, DIM>),
                    "grid"_a, "grid_boundary_normal_aligned"_a,
-                   "Returns a dense grid robin boundary condition callback.");
+                   "Returns a dense grid robin boundary condition callback.\nNOTE: the returned callback references the grid(s), which must be kept alive while the callback is in use.");
         utils_m.def(("get_dense_grid_robin_callback" + typeStr).c_str(),
                    nb::overload_cast<const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
                                      const Eigen::Matrix<float, Eigen::Dynamic, T::RowsAtCompileTime>&,
@@ -1252,20 +1252,24 @@ void bindWalkOnSpheresSolver(nb::module_ m, std::string typeStr)
 
     nb::class_<wosx::WalkOnSpheres<T, DIM>>(solvers_m, ("WalkOnSpheres" + typeStr).c_str())
         .def(nb::init<const wosx::GeometricQueries<DIM>&>(),
+            "NOTE: the solver stores a reference to geometric_queries, which must be kept alive for the lifetime of the solver.",
             "geometric_queries"_a)
         .def(nb::init<const wosx::GeometricQueries<DIM>&, WalkStateToVoidFunc<T, DIM>, WalkCodeStateToTypeFunc<T, DIM>>(),
+            "NOTE: the solver stores a reference to geometric_queries, which must be kept alive for the lifetime of the solver.",
             "geometric_queries"_a, "walk_state_callback"_a, "terminal_contribution_callback"_a)
         .def("solve", nb::overload_cast<const wosx::PDE<T, DIM>&, const wosx::WalkSettings&, int,
                                         wosx::SamplePoint<T, DIM>&, wosx::SampleStatistics<T, DIM>&>(
             &wosx::WalkOnSpheres<T, DIM>::solve, nb::const_),
             "Solves the given PDE at the input point.\nAssumes the point does not lie on the boundary when estimating the gradient.",
-            "pde"_a, "walk_settings"_a, "n_walks"_a, "sample_pt"_a, "statistics"_a)
+            "pde"_a, "walk_settings"_a, "n_walks"_a, "sample_pt"_a, "statistics"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("solve", nb::overload_cast<const wosx::PDE<T, DIM>&, const wosx::WalkSettings&, const IntList&,
                                         SamplePointList<T, DIM>&, SampleStatisticsList<T, DIM>&, bool, IntIntToVoidFunc>(
             &wosx::WalkOnSpheres<T, DIM>::solve, nb::const_),
             "Solves the given PDE at the input points.\nAssumes points do not lie on the boundary when estimating gradients.",
             "pde"_a, "walk_settings"_a, "n_walks"_a, "sample_pts"_a, "statistics"_a,
-            "run_single_threaded"_a=false, "report_progress"_a.none());
+            "run_single_threaded"_a=false, "report_progress"_a,
+            nb::call_guard<nb::gil_scoped_release>());
 }
 
 template <typename T, size_t DIM>
@@ -1275,20 +1279,24 @@ void bindWalkOnStarsSolver(nb::module_ m, std::string typeStr)
 
     nb::class_<wosx::WalkOnStars<T, DIM>>(solvers_m, ("WalkOnStars" + typeStr).c_str())
         .def(nb::init<const wosx::GeometricQueries<DIM>&>(),
+            "NOTE: the solver stores a reference to geometric_queries, which must be kept alive for the lifetime of the solver.",
             "geometric_queries"_a)
         .def(nb::init<const wosx::GeometricQueries<DIM>&, WalkStateToVoidFunc<T, DIM>, WalkCodeStateToTypeFunc<T, DIM>>(),
+            "NOTE: the solver stores a reference to geometric_queries, which must be kept alive for the lifetime of the solver.",
             "geometric_queries"_a, "walk_state_callback"_a, "terminal_contribution_callback"_a)
         .def("solve", nb::overload_cast<const wosx::PDE<T, DIM>&, const wosx::WalkSettings&, int,
                                         wosx::SamplePoint<T, DIM>&, wosx::SampleStatistics<T, DIM>&>(
             &wosx::WalkOnStars<T, DIM>::solve, nb::const_),
             "Solves the given PDE at the input point.\nAssumes the point does not lie on the boundary when estimating the gradient.",
-            "pde"_a, "walk_settings"_a, "n_walks"_a, "sample_pt"_a, "statistics"_a)
+            "pde"_a, "walk_settings"_a, "n_walks"_a, "sample_pt"_a, "statistics"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("solve", nb::overload_cast<const wosx::PDE<T, DIM>&, const wosx::WalkSettings&, const IntList&,
                                         SamplePointList<T, DIM>&, SampleStatisticsList<T, DIM>&, bool, IntIntToVoidFunc>(
             &wosx::WalkOnStars<T, DIM>::solve, nb::const_),
             "Solves the given PDE at the input points.\nAssumes points do not lie on the boundary when estimating gradients.",
             "pde"_a, "walk_settings"_a, "n_walks"_a, "sample_pts"_a, "statistics"_a,
-            "run_single_threaded"_a=false, "report_progress"_a.none());
+            "run_single_threaded"_a=false, "report_progress"_a,
+            nb::call_guard<nb::gil_scoped_release>());
 }
 
 template <typename T, size_t DIM>
@@ -1316,14 +1324,14 @@ void bindSamplers(nb::module_ m, std::string typeStr)
                                             &wosx::createUniformLineSegmentBoundarySampler<T>),
                       "positions"_a, "indices"_a, "inside_solve_region"_a,
                       "compute_weighted_normals"_a=false,
-                      "Creates a uniform line segment boundary sampler.");
+                      "Creates a uniform line segment boundary sampler.\nNOTE: the sampler stores references to positions and indices, which must be kept alive for the lifetime of the sampler.");
         samplers_m.def(("create_uniform_line_segment_boundary_sampler" + typeStr).c_str(),
                       nb::overload_cast<const FloatNList<2>&, const IntNList<2>&,
                                         const FloatList&, FloatNToTypeFunc<bool, 2>, bool>(
                                             &wosx::createUniformLineSegmentBoundarySampler<T>),
                       "positions"_a, "indices"_a, "primitive_weights"_a,
                       "inside_solve_region"_a, "compute_weighted_normals"_a=false,
-                      "Creates a uniform line segment boundary sampler with primitive weights.");
+                      "Creates a uniform line segment boundary sampler with primitive weights.\nNOTE: the sampler stores references to positions and indices, which must be kept alive for the lifetime of the sampler.");
         samplers_m.def(("create_uniform_line_segment_boundary_sampler" + typeStr).c_str(),
                       nb::overload_cast<const FloatNList<2>&, const IntNList<2>&,
                                         const FloatList&, const FloatList&,
@@ -1332,7 +1340,7 @@ void bindSamplers(nb::module_ m, std::string typeStr)
                       "positions"_a, "indices"_a, "primitive_weights"_a,
                       "primitive_weights_normal_aligned"_a, "inside_solve_region"_a,
                       "compute_weighted_normals"_a=false,
-                      "Creates a uniform line segment boundary sampler with side-specific primitive weights.");
+                      "Creates a uniform line segment boundary sampler with side-specific primitive weights.\nNOTE: the sampler stores references to positions and indices, which must be kept alive for the lifetime of the sampler.");
 
     } else if (DIM == 3) {
         samplers_m.def(("create_uniform_triangle_boundary_sampler" + typeStr).c_str(),
@@ -1341,14 +1349,14 @@ void bindSamplers(nb::module_ m, std::string typeStr)
                                             &wosx::createUniformTriangleBoundarySampler<T>),
                       "positions"_a, "indices"_a, "inside_solve_region"_a,
                       "compute_weighted_normals"_a=false,
-                      "Creates a uniform triangle boundary sampler.");
+                      "Creates a uniform triangle boundary sampler.\nNOTE: the sampler stores references to positions and indices, which must be kept alive for the lifetime of the sampler.");
         samplers_m.def(("create_uniform_triangle_boundary_sampler" + typeStr).c_str(),
                       nb::overload_cast<const FloatNList<3>&, const IntNList<3>&,
                                         const FloatList&, FloatNToTypeFunc<bool, 3>, bool>(
                                             &wosx::createUniformTriangleBoundarySampler<T>),
                       "positions"_a, "indices"_a, "primitive_weights"_a,
                       "inside_solve_region"_a, "compute_weighted_normals"_a=false,
-                      "Creates a uniform triangle boundary sampler with primitive weights.");
+                      "Creates a uniform triangle boundary sampler with primitive weights.\nNOTE: the sampler stores references to positions and indices, which must be kept alive for the lifetime of the sampler.");
         samplers_m.def(("create_uniform_triangle_boundary_sampler" + typeStr).c_str(),
                       nb::overload_cast<const FloatNList<3>&, const IntNList<3>&,
                                         const FloatList&, const FloatList&,
@@ -1357,7 +1365,7 @@ void bindSamplers(nb::module_ m, std::string typeStr)
                       "positions"_a, "indices"_a, "primitive_weights"_a,
                       "primitive_weights_normal_aligned"_a, "inside_solve_region"_a,
                       "compute_weighted_normals"_a=false,
-                      "Creates a uniform triangle boundary sampler with side-specific primitive weights.");
+                      "Creates a uniform triangle boundary sampler with side-specific primitive weights.\nNOTE: the sampler stores references to positions and indices, which must be kept alive for the lifetime of the sampler.");
     }
 
     nb::class_<wosx::DomainSampler<T, DIM>>(samplers_m, ("DomainSampler" + typeStr).c_str())
@@ -1401,6 +1409,7 @@ void bindBoundaryValueCachingSolver(nb::module_ m, std::string typeStr)
                       std::shared_ptr<wosx::BoundarySampler<T, DIM>>,
                       std::shared_ptr<wosx::BoundarySampler<T, DIM>>,
                       std::shared_ptr<wosx::DomainSampler<T, DIM>>>(),
+            "NOTE: the solver stores a reference to geometric_queries, which must be kept alive for the lifetime of the solver.",
             "geometric_queries"_a, "absorbing_boundary_sampler"_a, "reflecting_boundary_sampler"_a, "domain_sampler"_a)
         .def("generate_samples", &wosx::bvc::BoundaryValueCachingSolver<T, DIM>::generateSamples,
             "Generates boundary and domain samples.",
@@ -1410,17 +1419,20 @@ void bindBoundaryValueCachingSolver(nb::module_ m, std::string typeStr)
             "Computes sample estimates on the boundary.",
             "pde"_a, "walk_settings"_a, "n_walks_for_solution_estimates"_a, "n_walks_for_gradient_estimates"_a,
             "robin_coeff_cutoff_for_normal_derivative"_a, "use_finite_differences"_a=false,
-            "run_single_threaded"_a=false, "report_progress"_a.none())
+            "run_single_threaded"_a=false, "report_progress"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("splat", &wosx::bvc::BoundaryValueCachingSolver<T, DIM>::splat,
             "Splat solution and gradient estimates into the interior.",
             "pde"_a, "radius_clamp"_a, "kernel_regularization"_a, "robin_coeff_cutoff_for_normal_derivative"_a,
             "cutoff_dist_to_absorbing_boundary"_a, "cutoff_dist_to_reflecting_boundary"_a, "eval_pts"_a,
-            "report_progress"_a.none())
+            "report_progress"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("estimate_solution_near_boundary",
             &wosx::bvc::BoundaryValueCachingSolver<T, DIM>::estimateSolutionNearBoundary,
             "Estimates the solution at the input evaluation points near the boundary.",
             "pde"_a, "walk_settings"_a, "cutoff_dist_to_absorbing_boundary"_a, "cutoff_dist_to_reflecting_boundary"_a,
-            "n_walks_for_solution_estimates"_a, "eval_pts"_a, "run_single_threaded"_a=false);
+            "n_walks_for_solution_estimates"_a, "eval_pts"_a, "run_single_threaded"_a=false,
+            nb::call_guard<nb::gil_scoped_release>());
 }
 
 template <typename T, size_t DIM>
@@ -1452,6 +1464,7 @@ void bindReverseWalkOnStarsSolver(nb::module_ m, std::string typeStr)
                       std::shared_ptr<wosx::BoundarySampler<T, DIM>>,
                       std::shared_ptr<wosx::BoundarySampler<T, DIM>>,
                       std::shared_ptr<wosx::DomainSampler<T, DIM>>>(),
+            "NOTE: the solver stores a reference to geometric_queries, which must be kept alive for the lifetime of the solver.",
             "geometric_queries"_a, "absorbing_boundary_sampler"_a, "reflecting_boundary_sampler"_a, "domain_sampler"_a)
         .def("generate_samples",
             &wosx::rws::ReverseWalkOnStarsSolver<T, DIM, wosx::NearestNeighborFinder<DIM>>::generateSamples,
@@ -1463,7 +1476,8 @@ void bindReverseWalkOnStarsSolver(nb::module_ m, std::string typeStr)
             "Solves the PDE using the reverse walk on stars algorithm.",
             "pde"_a, "walk_settings"_a, "normal_offset_for_absorbing_boundary"_a, "radius_clamp"_a,
             "kernel_regularization"_a, "eval_pts"_a, "updated_eval_pt_locations"_a=true,
-            "run_single_threaded"_a=false, "report_progress"_a.none())
+            "run_single_threaded"_a=false, "report_progress"_a,
+            nb::call_guard<nb::gil_scoped_release>())
         .def("get_absorbing_boundary_sample_count",
             &wosx::rws::ReverseWalkOnStarsSolver<T, DIM, wosx::NearestNeighborFinder<DIM>>::getAbsorbingBoundarySampleCount,
             "Returns the number of absorbing boundary sample points.",

@@ -88,8 +88,8 @@ void runWalkOnSpheres(const json& solverConfig,
     const bool runSingleThreaded = getOptional<bool>(solverConfig, "runSingleThreaded", false);
 
     // initialize solver and estimate solution
-    ProgressBar pb(samplePts.size());
-    std::function<void(int, int)> reportProgress = getReportProgressCallback(pb);
+    wosx::ProgressBar pb(samplePts.size());
+    std::function<void(int, int)> reportProgress = wosx::getReportProgressCallback(pb);
 
     wosx::WalkSettings walkSettings(epsilonShellForAbsorbingBoundary,
                                     0.0f, 0.0f, russianRouletteThreshold,
@@ -138,8 +138,8 @@ void runWalkOnStars(const json& solverConfig,
     const bool runSingleThreaded = getOptional<bool>(solverConfig, "runSingleThreaded", false);
 
     // initialize solver and estimate solution
-    ProgressBar pb(samplePts.size());
-    std::function<void(int, int)> reportProgress = getReportProgressCallback(pb);
+    wosx::ProgressBar pb(samplePts.size());
+    std::function<void(int, int)> reportProgress = wosx::getReportProgressCallback(pb);
 
     wosx::WalkSettings walkSettings(epsilonShellForAbsorbingBoundary,
                                     epsilonShellForReflectingBoundary,
@@ -289,8 +289,8 @@ void runBoundaryValueCaching(const json& solverConfig,
 
     // solve using boundary value caching
     int totalWork = 2*(absorbingBoundaryCacheSize + reflectingBoundaryCacheSize) + domainCacheSize;
-    ProgressBar pb(totalWork);
-    std::function<void(int, int)> reportProgress = getReportProgressCallback(pb);
+    wosx::ProgressBar pb(totalWork);
+    std::function<void(int, int)> reportProgress = wosx::getReportProgressCallback(pb);
 
     wosx::bvc::BoundaryValueCachingSolver<T, DIM> boundaryValueCaching(
         queries, absorbingBoundarySampler, reflectingBoundarySampler, domainSampler);
@@ -434,8 +434,8 @@ void runReverseWalkOnStars(const json& solverConfig,
 
     // solve using reverse walk on stars
     int totalWork = absorbingBoundarySampleCount + reflectingBoundarySampleCount + domainSampleCount;
-    ProgressBar pb(totalWork);
-    std::function<void(int, int)> reportProgress = getReportProgressCallback(pb);
+    wosx::ProgressBar pb(totalWork);
+    std::function<void(int, int)> reportProgress = wosx::getReportProgressCallback(pb);
 
     wosx::rws::ReverseWalkOnStarsSolver<T, DIM, wosx::NearestNeighborFinder<DIM>> reverseWalkOnStars(
         queries, absorbingBoundarySampler, reflectingBoundarySampler, domainSampler);

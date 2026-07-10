@@ -25,6 +25,7 @@ namespace wosx {
 
 using fcpw::float2;
 using fcpw::float3;
+using namespace fcpw;
 
 template <size_t DIM>
 struct GPUSamplePoint {
@@ -159,8 +160,6 @@ struct GPUBVCBoundaryData {
     // members
     T solution;
     T normalDerivative;
-    T robin;
-    float robinCoeff;
 };
 
 template <size_t DIM>

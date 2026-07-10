@@ -36,7 +36,7 @@
 #pragma once
 
 #include <wosx/core/geometry_helpers.h>
-#include <wosx/core/pde.h>
+#include <wosx/point_estimation/common.h>
 #include <vector>
 
 namespace wosx {

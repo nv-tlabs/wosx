@@ -32,7 +32,7 @@ struct GPUWalkSettings: public GPUShaderObject {
     float epsilonShellForAbsorbingBoundary = 1e-3f;
     float epsilonShellForReflectingBoundary = 1e-3f;
     float silhouettePrecision = 1e-3f;
-    float russianRouletteThreshold = 0.99f;
+    float russianRouletteThreshold = 0.0f;
     uint32_t maxWalkLength = 10000;
     uint32_t stepsBeforeUsingMaximalSpheres = 10000;
     uint32_t solveDoubleSided = 0;

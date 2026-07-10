@@ -193,16 +193,12 @@ public struct BVCBoundaryData<T>
 {
     public T solution;
     public T normalDerivative;
-    public T robin;
-    public float robinCoeff;
 
     // constructor
     public __init()
     {
         solution = T(0.0);
         normalDerivative = T(0.0);
-        robin = T(0.0);
-        robinCoeff = 0.0;
     }
 };
 
@@ -220,29 +216,22 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
                                               T estimatedSolution,
                                               T estimatedNormalDerivative)
     {
-        // initialize boundary data
+        // initialize boundary data with the estimated solution and normal derivative
         BVCBoundaryData<T> boundaryData;
         boundaryData.solution = estimatedSolution;
 
-        // set normal derivative and robin data
         if (samplePt.type == SampleType::OnReflectingBoundary)
         {
-            if (walkSettings.ignoreReflectingBoundaryContribution == 0)
+            // set the normal derivative to the robin value for sample points on
+            // the Neumann boundary; for points on the Robin boundary, the robin
+            // data and coefficient are re-evaluated from the PDE during splatting
+            if (walkSettings.ignoreReflectingBoundaryContribution == 0 &&
+                pde.areRobinConditionsPureNeumann())
             {
                 bool returnBoundaryNormalAlignedValue = walkSettings.solveDoubleSided != 0 &&
                                                         samplePt.estimateBoundaryNormalAligned != 0;
-                if (pde.areRobinConditionsPureNeumann())
-                {
-                    boundaryData.normalDerivative = pde.robin(samplePt.pt, samplePt.normal,
-                                                              returnBoundaryNormalAlignedValue);
-                }
-                else
-                {
-                    boundaryData.robinCoeff = pde.robinCoeff(samplePt.pt, samplePt.normal,
-                                                             returnBoundaryNormalAlignedValue);
-                    boundaryData.robin = pde.robin(samplePt.pt, samplePt.normal,
-                                                   returnBoundaryNormalAlignedValue);
-                }
+                boundaryData.normalDerivative = pde.robin(samplePt.pt, samplePt.normal,
+                                                          returnBoundaryNormalAlignedValue);
             }
         }
         else
@@ -269,13 +258,28 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
 
         // compute the contribution of the boundary sample
         vector<float, DIM> pt = samplePt.pt;
-        vector<float, DIM> n = samplePt.normal * (samplePt.estimateBoundaryNormalAligned != 0 ? -1.0 : 1.0);
+        vector<float, DIM> n = samplePt.normal;
         T solution = boundaryData.solution;
         T normalDerivative = boundaryData.normalDerivative;
-        T robin = boundaryData.robin;
-        float robinCoeff = boundaryData.robinCoeff;
         float pdf = samplePt.pdf;
+        SampleType sampleType = samplePt.type;
+        bool estimateBoundaryNormalAligned = samplePt.estimateBoundaryNormalAligned != 0;
 
+        // evaluate the robin data and coefficient for points on a Robin boundary
+        T robin = T(0.0);
+        float robinCoeff = 0.0;
+        if (sampleType == SampleType::OnReflectingBoundary &&
+            walkSettings.ignoreReflectingBoundaryContribution == 0 &&
+            !pde.areRobinConditionsPureNeumann())
+        {
+            bool returnBoundaryNormalAlignedValue = walkSettings.solveDoubleSided != 0 &&
+                                                    estimateBoundaryNormalAligned;
+            robin = pde.robin(pt, n, returnBoundaryNormalAlignedValue);
+            robinCoeff = pde.robinCoeff(pt, n, returnBoundaryNormalAlignedValue);
+        }
+
+        // evaluate the greens function and its gradients
+        n = n * (estimateBoundaryNormalAligned ? -1.0 : 1.0);
         float r = max(radiusClamp, length(pt - greensFn.getPole()));
         float G = greensFn.evaluate(r);
         float P = greensFn.poissonKernel(r, pt, n);
@@ -289,6 +293,7 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
             P *= KernelRegularization.regularizationForPoissonKernel(r);
         }
 
+        // compute the solution and gradient estimates
         T solutionEstimate;
         T gradientEstimate[DIM];
         float alpha = evalPt.type == SampleType::OnAbsorbingBoundary ||
@@ -327,14 +332,14 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
         }
 
         // update statistics
-        if (samplePt.estimateBoundaryNormalAligned != 0)
+        if (estimateBoundaryNormalAligned)
         {
-            if (samplePt.type == SampleType::OnAbsorbingBoundary)
+            if (sampleType == SampleType::OnAbsorbingBoundary)
             {
                 evalStatistics.absorbingBoundaryNormalAligned.addSolutionEstimate(solutionEstimate, nSamplesSplatted);
                 evalStatistics.absorbingBoundaryNormalAligned.addGradientEstimate(gradientEstimate, nSamplesSplatted);
             }
-            else if (samplePt.type == SampleType::OnReflectingBoundary)
+            else if (sampleType == SampleType::OnReflectingBoundary)
             {
                 evalStatistics.reflectingBoundaryNormalAligned.addSolutionEstimate(solutionEstimate, nSamplesSplatted);
                 evalStatistics.reflectingBoundaryNormalAligned.addGradientEstimate(gradientEstimate, nSamplesSplatted);
@@ -342,12 +347,12 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
         }
         else
         {
-            if (samplePt.type == SampleType::OnAbsorbingBoundary)
+            if (sampleType == SampleType::OnAbsorbingBoundary)
             {
                 evalStatistics.absorbingBoundary.addSolutionEstimate(solutionEstimate, nSamplesSplatted);
                 evalStatistics.absorbingBoundary.addGradientEstimate(gradientEstimate, nSamplesSplatted);
             }
-            else if (samplePt.type == SampleType::OnReflectingBoundary)
+            else if (sampleType == SampleType::OnReflectingBoundary)
             {
                 evalStatistics.reflectingBoundary.addSolutionEstimate(solutionEstimate, nSamplesSplatted);
                 evalStatistics.reflectingBoundary.addGradientEstimate(gradientEstimate, nSamplesSplatted);
@@ -368,11 +373,14 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
         greensFn.updateAbsorptionCoeff(pde.absorptionCoeff());
         greensFn.updatePole(evalPt.pt);
 
-        // compute the contribution of the source sample
+        // compute the contribution of the source sample; skipped
+        // samples (e.g. rejected domain samples) contribute zero
         vector<float, DIM> pt = samplePt.pt;
-        T source = pde.source(pt);
+        T source = samplePt.estimationQuantity == EstimationQuantity::Skip ?
+                   T(0.0) : pde.source(pt);
         float pdf = samplePt.pdf;
 
+        // evaluate the greens function and its gradient
         float r = max(radiusClamp, length(pt - greensFn.getPole()));
         float G = greensFn.evaluate(r);
         vector<float, DIM> dG = greensFn.gradient(r, pt);
@@ -383,6 +391,7 @@ public struct BoundaryValueCaching<T, PDE, let DIM : int>
             G *= KernelRegularization.regularizationForGreensFn(r);
         }
 
+        // compute the solution and gradient estimates
         float alpha = evalPt.type == SampleType::OnAbsorbingBoundary ||
                       evalPt.type == SampleType::OnReflectingBoundary ?
                       2.0 : 1.0;

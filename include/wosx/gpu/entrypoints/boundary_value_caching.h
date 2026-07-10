@@ -134,6 +134,7 @@ private:
     // members
     std::shared_ptr<GPUTaskHandle<T, DIM>> handle;
     GPUContext& context;
+    std::shared_ptr<GPUWalkSettings> walkSettings;
     std::shared_ptr<GPUPDE> pde;
     std::shared_ptr<GPUBoundarySampler> absorbingBoundarySampler;
     std::shared_ptr<GPUBoundarySampler> reflectingBoundarySampler;
@@ -193,7 +194,7 @@ private:
     std::function<void(const ComputeShader&, const ShaderCursor&)> bindGenerateDomainSamplesResources;
     std::function<void(const ComputeShader&, const ShaderCursor&)> bindWalkOnStarsResources;
     std::function<void(const ComputeShader&, const ShaderCursor&)> bindBoundaryValueCachingResources;
-    std::function<void(const ComputeShader&, const ShaderCursor&)> bindPDEResources;
+    std::function<void(const ComputeShader&, const ShaderCursor&)> bindEvaluationOutputsResources;
     uint32_t nResidentThreads;
     uint32_t nThreadsPerGroup;
     bool usePersistentThreads;
@@ -211,6 +212,7 @@ GPUBoundaryValueCachingSolver<T, DIM>::GPUBoundaryValueCachingSolver(std::shared
                                                                      bool printLogs_):
 handle(handle_),
 context(handle->getContext()),
+walkSettings(walkSettings_),
 pde(handle->getPDE()),
 absorbingBoundarySampler(handle->getAbsorbingBoundarySampler()),
 reflectingBoundarySampler(handle->getReflectingBoundarySampler()),
@@ -307,8 +309,14 @@ printLogs(printLogs_)
         boundaryValueCaching.setResources(boundaryValueCachingShaderCursor, printLogs);
         cursor.getPath("gBoundaryValueCaching").setObject(boundaryValueCachingShaderObject);
     };
-    bindPDEResources = [this](const ComputeShader& shader,
-                              const ShaderCursor& cursor) {
+    bindEvaluationOutputsResources = [this](const ComputeShader& shader,
+                                            const ShaderCursor& cursor) {
+        ComPtr<IShaderObject> walkSettingsShaderObject = shader.createShaderObject(
+            context, walkSettings->getReflectionType());
+        ShaderCursor walkSettingsShaderCursor(walkSettingsShaderObject);
+        walkSettings->setResources(walkSettingsShaderCursor, printLogs);
+        cursor.getPath("gWalkSettings").setObject(walkSettingsShaderObject);
+
         ComPtr<IShaderObject> pdeShaderObject = shader.createShaderObject(
             context, pde->getReflectionType());
         ShaderCursor pdeShaderCursor(pdeShaderObject);
@@ -336,8 +344,10 @@ void GPUBoundaryValueCachingSolver<T, DIM>::seedRngs(uint32_t nRngs, GPUSeedRngs
     entryPoint.allocate(context, nRngs);
 
     // run shader
-    uint32_t nThreadGroups = countThreadGroups(nRngs, nThreadsPerGroup, printLogs);
-    runShader<GPUSeedRngs>(context, seedRngsShader, entryPoint, {}, nThreadGroups, 1, printLogs);
+    if (nRngs > 0) {
+        uint32_t nThreadGroups = countThreadGroups(nRngs, nThreadsPerGroup, printLogs);
+        runShader<GPUSeedRngs>(context, seedRngsShader, entryPoint, {}, nThreadGroups, 1, printLogs);
+    }
 }
 
 template <typename T, size_t DIM>
@@ -734,7 +744,7 @@ void GPUBoundaryValueCachingSolver<T, DIM>::getEvaluationOutputs(std::vector<GPU
     // run shader
     uint32_t nThreadGroups = countThreadGroups(nEvaluationPoints, nThreadsPerGroup, printLogs);
     runShader<GPUGetBVCEvaluationOutputs<T, DIM>>(context, getEvaluationOutputsShader,
-                                                  entryPoint, bindPDEResources,
+                                                  entryPoint, bindEvaluationOutputsResources,
                                                   nThreadGroups, 1, printLogs);
 
     // read results from GPU

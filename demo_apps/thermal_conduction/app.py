@@ -25,6 +25,7 @@ the problem setup: geometry, robin boundary data, camera views, and sample point
 
 import argparse
 import json
+import sys
 import os
 import numpy as np
 import wosx
@@ -525,7 +526,7 @@ def visualize_setup(directory_path, problem_config, output_config,
 def run_demo():
     # parse arguments
     parser = argparse.ArgumentParser(description="thermal conduction demo")
-    parser.add_argument("--config", type=str, help="path to the configuration file")
+    parser.add_argument("--config", type=str, required=True, help="path to the configuration file")
     args = parser.parse_args()
 
     try:
@@ -585,13 +586,13 @@ def run_demo():
                                  output_config, sample_index_map, solution)
 
     except FileNotFoundError:
-        print("Configuration file not found")
+        sys.exit("Configuration file not found")
 
     except json.JSONDecodeError:
-        print("Invalid configuration file")
+        sys.exit("Invalid configuration file")
 
     except ValueError as error:
-        print(error)
+        sys.exit(str(error))
 
 if __name__ == "__main__":
     run_demo()

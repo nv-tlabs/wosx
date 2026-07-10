@@ -237,11 +237,16 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
                                    inout WalkState<T, DIM> state)
     {
         // recursively perform a random walk till it reaches the absorbing boundary
+        bool firstStep = true;
         while (distToAbsorbingBoundary > walkSettings.epsilonShellForAbsorbingBoundary)
         {
             // for problems with double-sided boundary conditions, flip the current
             // normal orientation if the geometry is front-facing
-            flipNormalOrientation = false;
+            if (!firstStep)
+            {
+                flipNormalOrientation = false;
+            }
+
             if (walkSettings.solveDoubleSided != 0 && state.onReflectingBoundary != 0)
             {
                 if (state.prevDistance > 0.0 && dot(state.prevDirection, state.currentNormal) < 0.0)
@@ -354,6 +359,7 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
 
             // compute the distance to the absorbing boundary
             distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(state.currentPt, false);
+            firstStep = false;
         }
 
         return WalkCompletionCode::ReachedAbsorbingBoundary;
@@ -462,7 +468,7 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
             // initialize temporary variables for antithetic sampling
             float sourceRadius = 0.0, sourcePdf = 0.0, boundaryPdf = 0.0;
             vector<float, DIM> sourcePt = zero, boundaryPt = zero;
-            uint64_t seed = 0;
+            pcg32 savedRng;
 
             // compute control variates for the gradient estimate
             T boundaryGradientControlVariate = T(0.0);
@@ -539,14 +545,16 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
                 // compute the distance to the absorbing boundary
                 float distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(state.currentPt, false);
 
-                // reseed the rng for antithetic sampling
+                // save the rng so the antithetic walk replays the same random sequence;
+                // NOTE: copy the full generator (state and stream) rather than calling
+                // seed(), which would re-derive a different state and reset the stream
                 if (antitheticIter == 0)
                 {
-                    seed = rng.getState();
+                    savedRng = rng;
                 }
                 else
                 {
-                    rng.seed(seed);
+                    rng = savedRng;
                 }
 
                 // perform walk

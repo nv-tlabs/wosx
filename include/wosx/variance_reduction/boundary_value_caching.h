@@ -25,6 +25,8 @@
 #pragma once
 
 #include <wosx/point_estimation/walk_on_stars.h>
+#include <wosx/variance_reduction/boundary_samplers.h>
+#include <wosx/variance_reduction/domain_samplers.h>
 
 namespace wosx {
 
@@ -543,6 +545,9 @@ void BoundaryValueCaching<T, DIM>::estimateSolutionNearBoundary(const PDE<T, DIM
 
         } else if (evalPt.type == SampleType::OnReflectingBoundary) {
             evalPt.reflectingBoundaryStatistics.addSolutionEstimate(solutionEstimate);
+
+        } else {
+            evalPt.sourceStatistics.addSolutionEstimate(solutionEstimate);
         }
     }
 }

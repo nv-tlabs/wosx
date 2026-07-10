@@ -309,13 +309,13 @@ robinCoefficient(nullptr)
 {
     wosx::Vector2 uvMin = wosx::Vector2::Zero();
     wosx::Vector2 uvMax = wosx::Vector2::Ones();
-    wosx::Vector2i robinValueGridShape = wosx::Vector2i(meshData.robinValue.h,
-                                                        meshData.robinValue.w);
+    wosx::Vector2i robinValueGridShape = wosx::Vector2i(meshData.robinValue.w,
+                                                        meshData.robinValue.h);
     robinValue = std::make_unique<wosx::GPUDenseGrid<float, 1, 2>>(
         sampler, meshData.robinValue.toEigen(true, false),
         robinValueGridShape, uvMin, uvMax, false);
-    wosx::Vector2i robinCoefficientGridShape = wosx::Vector2i(meshData.robinCoefficient.h,
-                                                              meshData.robinCoefficient.w);
+    wosx::Vector2i robinCoefficientGridShape = wosx::Vector2i(meshData.robinCoefficient.w,
+                                                              meshData.robinCoefficient.h);
     robinCoefficient = std::make_unique<wosx::GPUDenseGrid<float, 1, 2>>(
         sampler, meshData.robinCoefficient.toEigen(true, false),
         robinCoefficientGridShape, uvMin, uvMax, false);
