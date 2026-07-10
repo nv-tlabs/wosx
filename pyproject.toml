@@ -16,7 +16,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rohan-sawhney/wosx"
+Homepage = "https://github.com/nv-tlabs/wosx"
 
 [tool.scikit-build]
 cmake.minimum-version = "3.15"
