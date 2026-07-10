@@ -254,7 +254,7 @@ public struct WalkOnSpheres<T, PDE, GeometricQueries, let DIM : int>
                 // initialize the greens function
                 GreensFn greensFn;
                 greensFn.updateAbsorptionCoeff(pde.absorptionCoeff());
-                greensFn.updateBall(state.currentPt, RADIUS_SHRINK_PERCENTAGE * samplePt.distToAbsorbingBoundary);
+                greensFn.updateBall(state.currentPt, WOSX_RADIUS_SHRINK_PERCENTAGE * samplePt.distToAbsorbingBoundary);
 
                 // compute the source contribution inside the ball
                 T firstSourceContribution = T(0.0);

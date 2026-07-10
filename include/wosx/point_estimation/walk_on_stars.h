@@ -409,7 +409,7 @@ WalkCompletionCode WalkOnStars<T, DIM>::walk(const PDE<T, DIM>& pde,
                 // distance does not impact correctness
                 if (queries.hasNonEmptyReflectingBoundary &&
                     walkSettings.epsilonShellForReflectingBoundary <= distToAbsorbingBoundary) {
-                    starRadius = std::max(RADIUS_SHRINK_PERCENTAGE*starRadius,
+                    starRadius = std::max(WOSX_RADIUS_SHRINK_PERCENTAGE*starRadius,
                                           walkSettings.epsilonShellForReflectingBoundary);
                 }
             }
@@ -606,7 +606,7 @@ void WalkOnStars<T, DIM>::estimateSolution(const PDE<T, DIM>& pde,
             // distance does not impact correctness
             if (queries.hasNonEmptyReflectingBoundary &&
                 walkSettings.epsilonShellForReflectingBoundary <= samplePt.distToAbsorbingBoundary) {
-                starRadius = std::max(RADIUS_SHRINK_PERCENTAGE*starRadius,
+                starRadius = std::max(WOSX_RADIUS_SHRINK_PERCENTAGE*starRadius,
                                       walkSettings.epsilonShellForReflectingBoundary);
             }
 
@@ -696,7 +696,7 @@ void WalkOnStars<T, DIM>::estimateSolutionAndGradient(const PDE<T, DIM>& pde,
     // distance does not impact correctness
     float boundaryDist = std::min(samplePt.distToAbsorbingBoundary,
                                   samplePt.distToReflectingBoundary);
-    samplePt.firstSphereRadius = RADIUS_SHRINK_PERCENTAGE*boundaryDist;
+    samplePt.firstSphereRadius = WOSX_RADIUS_SHRINK_PERCENTAGE*boundaryDist;
 
     // generate stratified samples
     std::vector<float> stratifiedSamples;

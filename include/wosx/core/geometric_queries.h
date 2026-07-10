@@ -33,7 +33,7 @@
 #include <Eigen/Geometry>
 #include <vector>
 
-#define RAY_OFFSET 1e-6f
+#define WOSX_RAY_OFFSET 1e-6f
 
 namespace wosx {
 
@@ -170,7 +170,7 @@ domainMax(domainMax_)
 template <size_t DIM>
 Vector<DIM> offsetPointAlongDirectionImpl(const Vector<DIM>& p, const Vector<DIM>& n)
 {
-    return p + RAY_OFFSET*n;
+    return p + WOSX_RAY_OFFSET*n;
 }
 
 inline float intAsFloat(int a)

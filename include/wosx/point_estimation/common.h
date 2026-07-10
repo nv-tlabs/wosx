@@ -29,7 +29,7 @@
 #include <wosx/core/geometric_queries.h>
 #include <wosx/core/distributions.h>
 
-#define RADIUS_SHRINK_PERCENTAGE 0.99f
+#define WOSX_RADIUS_SHRINK_PERCENTAGE 0.99f
 
 namespace wosx {
 
