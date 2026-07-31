@@ -164,7 +164,7 @@ void SlicePlaneData::deactivateInteriorCells(std::shared_ptr<wosx::GPUTaskHandle
     distanceQueries.computeDistToBoundary(cellCenters, distToBoundary, stub);
 
     // deactivate interior cells using signed distance
-    const float boundaryDistanceMargin = 0.05f;
+    const float boundaryDistanceMargin = 0.035f;
     for (int i = 0; i < (int)cellCenters.size(); i++) {
         if (activeCells[i] && distToBoundary[i] <= boundaryDistanceMargin) {
             activeCells[i] = false;
@@ -318,18 +318,24 @@ wosx::GPUPDEType GPUPotentialFlowPDE::getType() const
 std::vector<float> computeBoundarySamplingWeights(const MeshData& meshData,
                                                   const FreestreamState& freestreamState)
 {
-    // set primitive weights proportional to the absolute value of the
-    // Kelvin-transformed Robin RHS, with a small floor to keep full support
-    std::vector<float> primitiveWeights(meshData.indices.size(), 0.0f);
+    // set primitive weights to a mixture of two densities: one proportional to the
+    // Kelvin-transformed Robin RHS, and one uniform with respect to the original surface
+    // area (a weight of 1/|y|^4 per unit inverted area, since an inversion scales areas
+    // by 1/|x|^4). The latter keeps the sample density from vanishing where the freestream
+    // is tangent to the surface, as samples there carry a large 1/pdf during splatting.
+    int nPrimitives = (int)meshData.indices.size();
+    std::vector<float> rhsWeights(nPrimitives, 0.0f);
+    std::vector<float> areaWeights(nPrimitives, 0.0f);
     wosx::Vector3 freestreamVelocity = freestreamState.getVelocity();
-    float meanWeight = 0.0f;
+    float rhsSamplingMass = 0.0f;
+    float areaSamplingMass = 0.0f;
 
-    for (int i = 0; i < (int)meshData.indices.size(); i++) {
-        wosx::Vector3 y = wosx::Vector3::Zero();
-        for (int j = 0; j < 3; j++) {
-            y += meshData.invertedPositions[meshData.indices[i][j]];
-        }
-        y /= 3.0f;
+    for (int i = 0; i < nPrimitives; i++) {
+        const wosx::Vector3i& index = meshData.indices[i];
+        const wosx::Vector3& p0 = meshData.invertedPositions[index[0]];
+        const wosx::Vector3& p1 = meshData.invertedPositions[index[1]];
+        const wosx::Vector3& p2 = meshData.invertedPositions[index[2]];
+        wosx::Vector3 y = (p0 + p1 + p2)/3.0f;
 
         wosx::Vector3 N = wosx::computePrimitiveNormal<3>(meshData.invertedPositions,
                                                           meshData.indices, i);
@@ -337,14 +343,20 @@ std::vector<float> computeBoundarySamplingWeights(const MeshData& meshData,
         if (r2 <= std::numeric_limits<float>::epsilon()) continue;
 
         wosx::Vector3 n = N - 2.0f*N.dot(y)*y/r2;
-        primitiveWeights[i] = std::fabs(-n.dot(freestreamVelocity))/(r2*std::sqrt(r2));
-        meanWeight += primitiveWeights[i];
+        rhsWeights[i] = std::fabs(-n.dot(freestreamVelocity))/(r2*std::sqrt(r2));
+        areaWeights[i] = 1.0f/(r2*r2);
+
+        // the sampler builds its cdf from primitive weights scaled by primitive areas,
+        // so accumulate the sampling mass of each density to combine them evenly
+        float area = wosx::computeTriangleSurfaceArea(p0, p1, p2);
+        rhsSamplingMass += area*rhsWeights[i];
+        areaSamplingMass += area*areaWeights[i];
     }
 
-    meanWeight /= (float)primitiveWeights.size();
-    float weightFloor = meanWeight > 0.0f ? 1e-3f*meanWeight : 1.0f;
-    for (float& weight: primitiveWeights) {
-        weight += weightFloor;
+    std::vector<float> primitiveWeights(nPrimitives, 0.0f);
+    for (int i = 0; i < nPrimitives; i++) {
+        primitiveWeights[i] = 0.75f*rhsWeights[i]/std::max(rhsSamplingMass, 1e-8f) +
+                              0.25f*areaWeights[i]/std::max(areaSamplingMass, 1e-8f);
     }
 
     return primitiveWeights;

@@ -117,7 +117,7 @@ class SlicePlaneData:
         distance_queries.compute_dist_to_boundary(cell_centers, dist_to_boundary, stub)
 
         # deactivate interior cells using signed distance
-        boundary_distance_margin = 0.05
+        boundary_distance_margin = 0.035
         dist_to_boundary_numpy = wosx.convert_list_to_numpy_array(dist_to_boundary)
         self.active_cells &= dist_to_boundary_numpy > boundary_distance_margin
 
@@ -234,18 +234,22 @@ class GPUPotentialFlowPDE(wosx.Core.GPUPDE):
         return wosx.Core.GPUPDEType.Poisson
 
 def compute_boundary_sampling_weights(mesh_data, freestream_state):
-    # set primitive weights proportional to the absolute value of the
-    # Kelvin-transformed Robin RHS, with a small floor to keep full support
+    # set primitive weights to a mixture of two densities: one proportional to the
+    # Kelvin-transformed Robin RHS, and one uniform with respect to the original surface
+    # area (a weight of 1/|y|^4 per unit inverted area, since an inversion scales areas
+    # by 1/|x|^4). The latter keeps the sample density from vanishing where the freestream
+    # is tangent to the surface, as samples there carry a large 1/pdf during splatting.
     positions = wosx.convert_list_to_numpy_array(mesh_data.inverted_positions)
     indices = wosx.convert_list_to_numpy_array(mesh_data.indices)
     freestream_velocity = freestream_state.get_velocity()
 
-    # compute triangle centers and normals
+    # compute triangle centers, normals and areas
     tri_positions = positions[indices]
     centers = np.mean(tri_positions, axis=1)
     normals = np.cross(tri_positions[:, 1] - tri_positions[:, 0],
                        tri_positions[:, 2] - tri_positions[:, 0])
     normal_norms = np.linalg.norm(normals, axis=1)
+    areas = 0.5 * normal_norms
     valid_normals = normal_norms > np.finfo(np.float32).eps
     normals[valid_normals] /= normal_norms[valid_normals, None]
     normals[~valid_normals] = 0.0
@@ -254,8 +258,9 @@ def compute_boundary_sampling_weights(mesh_data, freestream_state):
     r2 = np.sum(centers * centers, axis=1)
     valid_radii = r2 > np.finfo(np.float32).eps
 
-    # compute the primitive weights
-    primitive_weights = np.zeros(len(indices), dtype=np.float32)
+    # compute the weights for each density
+    rhs_weights = np.zeros(len(indices), dtype=np.float32)
+    area_weights = np.zeros(len(indices), dtype=np.float32)
     if np.any(valid_radii):
         centers_valid = centers[valid_radii]
         normals_valid = normals[valid_radii]
@@ -267,15 +272,17 @@ def compute_boundary_sampling_weights(mesh_data, freestream_state):
         weights = np.abs(-np.sum(transformed_normals * freestream_velocity, axis=1))
         weights /= r2_valid
         weights /= np.sqrt(r2_valid)
-        primitive_weights[valid_radii] = weights
+        rhs_weights[valid_radii] = weights
+        area_weights[valid_radii] = 1.0 / (r2_valid * r2_valid)
 
-    # compute the mean weight and weight floor
-    mean_weight = float(np.mean(primitive_weights)) if len(primitive_weights) else 0.0
-    weight_floor = 1e-3 * mean_weight if mean_weight > 0.0 else 1.0
-    primitive_weights += weight_floor
+    # the sampler builds its cdf from primitive weights scaled by primitive areas,
+    # so normalize by the sampling mass of each density to combine them evenly
+    rhs_sampling_mass = max(float(np.sum(areas * rhs_weights)), 1e-8)
+    area_sampling_mass = max(float(np.sum(areas * area_weights)), 1e-8)
+    primitive_weights = 0.75 * rhs_weights / rhs_sampling_mass + 0.25 * area_weights / area_sampling_mass
 
-    # return the adjusted primitive weights
-    return wosx.FloatList(primitive_weights)
+    # return the mixture primitive weights
+    return wosx.FloatList(primitive_weights.astype(np.float32))
 
 ################################################################################################################
 # Boundary value caching solver - create evaluation points, run the solver and

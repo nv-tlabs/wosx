@@ -1,8 +1,8 @@
 {
     "deviceBackend": "cuda",
     "solver": {
-        "reflectingBoundaryCacheSize": 25000,
-        "nWalksForCachedSolutionEstimates": 25,
+        "reflectingBoundaryCacheSize": 125000,
+        "nWalksForCachedSolutionEstimates": 5,
         "maxWalkLength": 10000,
         "epsilonShellForAbsorbingBoundary": 1e-3,
         "epsilonShellForReflectingBoundary": 1e-3,
