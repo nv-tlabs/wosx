@@ -28,6 +28,7 @@ __include core.pde;
 __include core.geometric_queries;
 
 internal static const float RADIUS_SHRINK_PERCENTAGE = 0.99;
+internal static const float RADIUS_EXPAND_PERCENTAGE = 1.001;
 
 public struct WalkSettings
 {

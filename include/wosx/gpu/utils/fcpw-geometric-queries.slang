@@ -45,13 +45,19 @@ public struct FcpwAbsorbingBoundaryGeometricQueries<AbsorbingBoundaryAggregate, 
 
     // computes the distance to the boundary
     public float computeDistToBoundary(vector<float, DIM> x,
-                                       bool computeSignedDistance)
+                                       bool computeSignedDistance,
+                                       float maxDistance = FLT_MAX)
     {
         BoundingSphere sphere;
         sphere.c = toFloat3<DIM>(x);
-        sphere.r2 = FLT_MAX;
+        sphere.r2 = maxDistance < FLT_MAX ? maxDistance * maxDistance : FLT_MAX;
         Interaction interaction;
-        absorbingBoundaryAggregate.findClosestPoint(sphere, interaction, computeSignedDistance);
+        bool found = absorbingBoundaryAggregate.findClosestPoint(sphere, interaction, computeSignedDistance);
+        if (!found)
+        {
+            // NOTE: not accounting for signed distance here
+            return maxDistance;
+        }
 
         return computeSignedDistance ?
                signedDistance(sphere.c, interaction.p, interaction.n, interaction.d) :
@@ -123,13 +129,19 @@ public struct FcpwReflectingBoundaryGeometricQueries<ReflectingBoundaryAggregate
 
     // computes the distance to the boundary
     public float computeDistToBoundary(vector<float, DIM> x,
-                                       bool computeSignedDistance)
+                                       bool computeSignedDistance,
+                                       float maxDistance = FLT_MAX)
     {
         BoundingSphere sphere;
         sphere.c = toFloat3<DIM>(x);
-        sphere.r2 = FLT_MAX;
+        sphere.r2 = maxDistance < FLT_MAX ? maxDistance * maxDistance : FLT_MAX;
         Interaction interaction;
-        reflectingBoundaryAggregate.findClosestPoint(sphere, interaction, computeSignedDistance);
+        bool found = reflectingBoundaryAggregate.findClosestPoint(sphere, interaction, computeSignedDistance);
+        if (!found)
+        {
+            // NOTE: not accounting for signed distance here
+            return maxDistance;
+        }
 
         return computeSignedDistance ?
                signedDistance(sphere.c, interaction.p, interaction.n, interaction.d) :

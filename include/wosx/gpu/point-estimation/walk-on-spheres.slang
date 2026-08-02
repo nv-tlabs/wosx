@@ -148,8 +148,11 @@ public struct WalkOnSpheres<T, PDE, GeometricQueries, let DIM : int>
                 return WalkCompletionCode::ExceededMaxWalkLength;
             }
 
-            // compute the distance to the absorbing boundary
-            distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(state.currentPt, false);
+            // compute the distance to the absorbing boundary; the walk stepped a distance
+            // equal to the ball radius, so by the triangle inequality the new distance is
+            // at most twice that radius---supplying this bound prunes the query traversal
+            float distBound = RADIUS_EXPAND_PERCENTAGE * 2.0 * distToAbsorbingBoundary;
+            distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(state.currentPt, false, distBound);
         }
 
         return WalkCompletionCode::ReachedAbsorbingBoundary;
@@ -304,8 +307,10 @@ public struct WalkOnSpheres<T, PDE, GeometricQueries, let DIM : int>
                 state.throughput *= greensFn.poissonKernel() / boundaryPdf;
                 vector<float, DIM> boundaryGradientDirection = greensFn.poissonKernelGradient(boundaryPt) / (boundaryPdf * state.throughput);
 
-                // compute the distance to the absorbing boundary
-                float distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(state.currentPt, false);
+                // compute the distance to the absorbing boundary; the first step moved the
+                // ball radius away from the sample point, which bounds the new distance
+                float distBound = RADIUS_EXPAND_PERCENTAGE * 2.0 * samplePt.distToAbsorbingBoundary;
+                float distToAbsorbingBoundary = geometricQueries.computeDistToAbsorbingBoundary(state.currentPt, false, distBound);
 
                 // save the rng so the antithetic walk replays the same random sequence;
                 // NOTE: copy the full generator (state and stream) rather than calling

@@ -62,7 +62,8 @@ public interface IAbsorbingBoundaryGeometricQueries<let DIM : int>
 {
     // computes the distance to the boundary
     float computeDistToBoundary(vector<float, DIM> x,
-                                bool computeSignedDistance);
+                                bool computeSignedDistance,
+                                float maxDistance = FLT_MAX);
 
     // projects a point to the boundary
     bool projectToBoundary(inout vector<float, DIM> x,
@@ -83,7 +84,8 @@ public interface IReflectingBoundaryGeometricQueries<let DIM : int>
 {
     // computes the distance to the boundary
     float computeDistToBoundary(vector<float, DIM> x,
-                                bool computeSignedDistance);
+                                bool computeSignedDistance,
+                                float maxDistance = FLT_MAX);
 
     // projects a point to the boundary
     bool projectToBoundary(inout vector<float, DIM> x,
@@ -125,9 +127,11 @@ public interface IGeometricQueries<let DIM : int>
 {
     // computes the distance to the boundary
     float computeDistToAbsorbingBoundary(vector<float, DIM> x,
-                                         bool computeSignedDistance);
+                                         bool computeSignedDistance,
+                                         float maxDistance = FLT_MAX);
     float computeDistToReflectingBoundary(vector<float, DIM> x,
-                                          bool computeSignedDistance);
+                                          bool computeSignedDistance,
+                                          float maxDistance = FLT_MAX);
     float computeDistToBoundary(vector<float, DIM> x,
                                 bool computeSignedDistance);
 
@@ -258,7 +262,8 @@ public struct EmptyAbsorbingBoundaryGeometricQueries<let DIM : int> : IAbsorbing
 {
     // computes the distance to the boundary
     public float computeDistToBoundary(vector<float, DIM> x,
-                                       bool computeSignedDistance)
+                                       bool computeSignedDistance,
+                                       float maxDistance = FLT_MAX)
     {
         return FLT_MAX;
     }
@@ -291,7 +296,8 @@ public struct EmptyReflectingBoundaryGeometricQueries<let DIM : int> : IReflecti
 {
     // computes the distance to the boundary
     public float computeDistToBoundary(vector<float, DIM> x,
-                                       bool computeSignedDistance)
+                                       bool computeSignedDistance,
+                                       float maxDistance = FLT_MAX)
     {
         return FLT_MAX;
     }
@@ -367,19 +373,21 @@ public struct GeometricQueries<AbsorbingBoundaryGeometricQueries,
 
     // computes the distance to the boundary
     public float computeDistToAbsorbingBoundary(vector<float, DIM> x,
-                                                bool computeSignedDistance)
+                                                bool computeSignedDistance,
+                                                float maxDistance = FLT_MAX)
     {
         if (isAbsorbingBoundaryEmpty())
         {
             return length(min(domainMin - x, x - domainMax));
         }
 
-        return absorbingBoundaryGeometricQueries.computeDistToBoundary(x, computeSignedDistance);
+        return absorbingBoundaryGeometricQueries.computeDistToBoundary(x, computeSignedDistance, maxDistance);
     }
     public float computeDistToReflectingBoundary(vector<float, DIM> x,
-                                                 bool computeSignedDistance)
+                                                 bool computeSignedDistance,
+                                                 float maxDistance = FLT_MAX)
     {
-        return reflectingBoundaryGeometricQueries.computeDistToBoundary(x, computeSignedDistance);
+        return reflectingBoundaryGeometricQueries.computeDistToBoundary(x, computeSignedDistance, maxDistance);
     }
     public float computeDistToBoundary(vector<float, DIM> x,
                                        bool computeSignedDistance)

@@ -252,7 +252,8 @@ public struct SdfAbsorbingBoundaryGeometricQueries<SdfGrid, let DIM : int> :
 
     // computes the distance to the boundary
     public float computeDistToBoundary(vector<float, DIM> x,
-                                       bool computeSignedDistance)
+                                       bool computeSignedDistance,
+                                       float maxDistance = FLT_MAX)
     {
         return computeSignedDistance ? sdfGrid(x) : abs(sdfGrid(x));
     }
