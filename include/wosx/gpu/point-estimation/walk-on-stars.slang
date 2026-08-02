@@ -146,7 +146,7 @@ public struct WalkOnStars<T, PDE, GeometricQueries, let DIM : int>
                                                                            state.currentNormal, boundarySampleNormal,
                                                                            state.onReflectingBoundary != 0, true))
                     {
-                        float r = max(greensFn.getRadiusClamp(), length(boundarySample.pt - state.currentPt));
+                        float r = max(greensFn.getRadiusClamp(), distToSample);
                         float G = greensFn.evaluate(r);
                         bool returnBoundaryNormalAlignedValue = walkSettings.solveDoubleSided != 0 &&
                                                                 estimateBoundaryNormalAligned;
